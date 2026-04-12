@@ -147,20 +147,52 @@ class VisaScraper:
 
     def _matches_target(self, item: dict) -> bool:
         """Check if the item matches our target city, type, and category."""
-        city = item.get("city", "").lower()
-        visa_type = item.get("visa_type", item.get("type", "")).lower()
-        category = item.get("category", item.get("visa_category", "")).lower()
+        # Check city_key field (e.g., "cnBEI" for Beijing)
+        city_key = item.get("city_key", "").lower()
 
-        return (
-            self.settings.city.lower() in city
-            and self.settings.visa_type.lower() in visa_type
-            and "student" in category
-        )
+        # Check visa_class in attrs (e.g., "F-1 Student • Other Student")
+        data = item.get("data", {})
+        attrs = data.get("attrs", {})
+        visa_class = attrs.get("visa_class", "").lower()
+        visa_type = attrs.get("visa_type", "").lower()
+
+        # Beijing is "cnBEI", F-1 should be in visa_class
+        beijing_codes = ["cnbei", "beijing", "北京"]
+        is_beijing = any(code in city_key for code in beijing_codes)
+        is_f1 = "f-1" in visa_class or "f-1" in visa_type
+        is_other_student = "other" in visa_class
+
+        return is_beijing and is_f1 and is_other_student
 
     def _extract_from_item(self, item: dict) -> Optional[AppointmentInfo]:
-        """Extract appointment date from a matching item."""
+        """Extract earliest appointment date from a matching item."""
         try:
-            # Try different possible field names for the date
+            # Get slots from data
+            data = item.get("data", {})
+            slots = data.get("slots", {})
+
+            if slots:
+                # slots is a dict with date strings as keys
+                dates = list(slots.keys())
+                if dates:
+                    # Parse all dates and find the earliest
+                    parsed_dates = []
+                    for date_str in dates:
+                        parsed = self._parse_date(date_str)
+                        if parsed:
+                            parsed_dates.append(parsed)
+
+                    if parsed_dates:
+                        earliest_date = min(parsed_dates)
+                        return AppointmentInfo(
+                            city=self.settings.city,
+                            visa_type=self.settings.visa_type,
+                            visa_category=self.settings.visa_category,
+                            available_date=earliest_date,
+                            raw_data=item,
+                        )
+
+            # Fallback: try direct date fields
             date_str = (
                 item.get("earliest_date")
                 or item.get("available_date")
