@@ -53,18 +53,15 @@ class VisaScraper:
                 user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.0"
             )
 
-            # Store API responses
-            api_data = {}
+            # Store API response data
+            api_responses: list[Response] = []
 
             def handle_response(response: Response):
-                """Intercept and store Supabase slot_data API responses."""
+                """Intercept Supabase slot_data API responses."""
                 url = response.url
                 if "slot_data" in url or self.SUPABASE_URL in url:
                     logger.debug(f"Intercepted Supabase API call: {url}")
-                    try:
-                        api_data[url] = response.json()
-                    except Exception as e:
-                        logger.debug(f"Failed to parse API response: {e}")
+                    api_responses.append(response)
 
             page = await context.new_page()
             page.on("response", handle_response)
@@ -75,6 +72,20 @@ class VisaScraper:
 
                 # Wait for JavaScript to load and make API calls
                 await page.wait_for_timeout(3000)
+
+                # Process intercepted API responses
+                api_data = {}
+                for response in api_responses:
+                    try:
+                        # Check if response is OK and has JSON content
+                        if response.status == 200:
+                            body = await response.body()
+                            try:
+                                api_data[response.url] = json.loads(body)
+                            except json.JSONDecodeError:
+                                logger.debug(f"Response body is not JSON: {response.url}")
+                    except Exception as e:
+                        logger.debug(f"Failed to process API response: {e}")
 
                 # Try to extract data from intercepted Supabase API calls
                 appointment_data = self._extract_from_api_data(api_data)
