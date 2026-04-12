@@ -1,0 +1,1 @@
+"""Visa appointment scraper package."""
