@@ -2,20 +2,48 @@
 import argparse
 import asyncio
 import logging
+import os
 import sys
 from datetime import date
+from logging.handlers import RotatingFileHandler
+from pathlib import Path
 from typing import Optional
 
 from config import get_settings
 from notifier import EmailNotifier
 from scraper import VisaScraper, AppointmentInfo
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler(sys.stdout)],
-)
+
+def setup_logging(verbose: bool = False) -> logging.Logger:
+    """Configure logging with both console and file handlers."""
+    log_level = logging.DEBUG if verbose else logging.INFO
+    log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+    # Create logs directory if it doesn't exist
+    logs_dir = Path(__file__).parent / "logs"
+    logs_dir.mkdir(exist_ok=True)
+
+    # Configure root logger
+    logging.basicConfig(
+        level=log_level,
+        format=log_format,
+        handlers=[
+            # Console handler
+            logging.StreamHandler(sys.stdout),
+            # File handler with rotation (10MB per file, keep 5 backups)
+            RotatingFileHandler(
+                logs_dir / "visa-scraper.log",
+                maxBytes=10 * 1024 * 1024,  # 10MB
+                backupCount=5,
+                encoding="utf-8",
+            ),
+        ],
+    )
+
+    return logging.getLogger(__name__)
+
+
+# Will be configured in main()
 logger = logging.getLogger(__name__)
 
 
@@ -106,8 +134,9 @@ def main():
 
     args = parser.parse_args()
 
-    if args.verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
+    # Setup logging with file output
+    global logger
+    logger = setup_logging(verbose=args.verbose)
 
     try:
         if args.loop:
