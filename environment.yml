@@ -1,0 +1,14 @@
+name: visa-scraper
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12
+  - pip
+  - pip:
+    - playwright
+    - pydantic
+    - pydantic-settings
+    - python-dotenv
+    - pytest
+    - pytest-asyncio
