@@ -21,10 +21,18 @@ class EmailNotifier:
         try:
             msg = self._build_message(available_date)
 
-            with smtplib.SMTP(self.settings.smtp_host, self.settings.smtp_port) as server:
-                server.starttls()
-                server.login(self.settings.smtp_user, self.settings.smtp_password)
-                server.send_message(msg)
+            # Use SSL for port 465, STARTTLS for port 587
+            if self.settings.smtp_port == 465:
+                # SSL connection (QQ, 163, etc.)
+                with smtplib.SMTP_SSL(self.settings.smtp_host, self.settings.smtp_port) as server:
+                    server.login(self.settings.smtp_user, self.settings.smtp_password)
+                    server.send_message(msg)
+            else:
+                # STARTTLS connection (Gmail, Outlook, etc.)
+                with smtplib.SMTP(self.settings.smtp_host, self.settings.smtp_port) as server:
+                    server.starttls()
+                    server.login(self.settings.smtp_user, self.settings.smtp_password)
+                    server.send_message(msg)
 
             logger.info(
                 f"Notification sent to {self.settings.notify_email} "
