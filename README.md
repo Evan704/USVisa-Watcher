@@ -1,4 +1,4 @@
-# Visa Appointment Scraper
+# USVisa-Watcher
 
 自动监控 qmq.app 美签面签预约信息的 Python 脚本。
 
@@ -15,7 +15,7 @@
 
 ```bash
 conda env create -f environment.yml
-conda activate visa-scraper
+conda activate usvisa-watcher
 ```
 
 ### 2. 安装浏览器
@@ -135,7 +135,7 @@ sudo apt-get install ca-certificates
 
 ---
 
-# Visa Appointment Scraper (English)
+# USVisa-Watcher (English)
 
 Python script to automatically monitor US visa appointment availability on qmq.app.
 
@@ -152,7 +152,7 @@ Python script to automatically monitor US visa appointment availability on qmq.a
 
 ```bash
 conda env create -f environment.yml
-conda activate visa-scraper
+conda activate usvisa-watcher
 ```
 
 ### 2. Install Browser

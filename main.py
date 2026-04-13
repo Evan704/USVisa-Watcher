@@ -32,7 +32,7 @@ def setup_logging(verbose: bool = False) -> logging.Logger:
             logging.StreamHandler(sys.stdout),
             # File handler with rotation (10MB per file, keep 5 backups)
             RotatingFileHandler(
-                logs_dir / "visa-scraper.log",
+                logs_dir / "usvisa-watcher.log",
                 maxBytes=10 * 1024 * 1024,  # 10MB
                 backupCount=5,
                 encoding="utf-8",
@@ -113,7 +113,7 @@ async def run_loop():
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description="Monitor US visa appointment availability on qmq.app"
+        description="USVisa-Watcher: Monitor US visa appointment availability on qmq.app"
     )
     parser.add_argument(
         "--loop",

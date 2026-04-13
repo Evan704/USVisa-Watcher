@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Python-based visa appointment monitoring tool that scrapes qmq.app for US visa appointment availability and sends email notifications when earlier dates become available.
+This is USVisa-Watcher, a Python-based visa appointment monitoring tool that scrapes qmq.app for US visa appointment availability and sends email notifications when earlier dates become available.
 
 ## Common Commands
 
@@ -12,7 +12,7 @@ This is a Python-based visa appointment monitoring tool that scrapes qmq.app for
 ```bash
 # Create and activate conda environment
 conda env create -f environment.yml
-conda activate visa-scraper
+conda activate usvisa-watcher
 
 # Install browser for Playwright
 playwright install chromium

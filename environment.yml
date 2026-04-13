@@ -1,4 +1,4 @@
-name: visa-scraper
+name: usvisa-watcher
 channels:
   - conda-forge
   - defaults
