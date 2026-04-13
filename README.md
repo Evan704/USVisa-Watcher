@@ -30,9 +30,11 @@ cd USVisa-Watcher
 conda env create -f environment.yml
 conda activate usvisa-watcher
 
-# 安装浏览器
-playwright install chromium
+# 安装浏览器及系统依赖
+playwright install --with-deps chromium
 ```
+
+> **注意**：`--with-deps` 会自动安装 Chromium 所需的系统依赖。如果跳过此步骤，可能遇到浏览器启动失败的问题。
 
 **方式二：使用 pip**
 
@@ -48,8 +50,12 @@ venv\Scripts\activate
 
 # 安装依赖
 pip install -r requirements.txt
-playwright install chromium
+
+# 安装浏览器及系统依赖
+playwright install --with-deps chromium
 ```
+
+> **注意**：`--with-deps` 会自动安装 Chromium 所需的系统依赖。如果跳过此步骤，可能遇到浏览器启动失败的问题。
 
 ### 3. 配置环境变量
 
@@ -333,7 +339,7 @@ cd USVisa-Watcher
 # 2. Install dependencies
 conda env create -f environment.yml
 conda activate usvisa-watcher
-playwright install chromium
+playwright install --with-deps chromium
 
 # 3. Configure
 cp .env.example .env
