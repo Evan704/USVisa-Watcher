@@ -1,13 +1,11 @@
 # scraper.py
 import json
 import logging
-import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import date, datetime
 from typing import TYPE_CHECKING, Optional
-from urllib.parse import urljoin
 
-from playwright.async_api import async_playwright, Page, Response
+from playwright.async_api import async_playwright, Response
 
 if TYPE_CHECKING:
     from config import Settings
@@ -58,9 +56,8 @@ class VisaScraper:
 
             def handle_response(response: Response):
                 """Intercept Supabase slot_data API responses."""
-                url = response.url
-                if "slot_data" in url or self.SUPABASE_URL in url:
-                    logger.debug(f"Intercepted Supabase API call: {url}")
+                if "slot_data" in response.url or self.SUPABASE_URL in response.url:
+                    logger.debug(f"Intercepted Supabase API call: {response.url}")
                     api_responses.append(response)
 
             page = await context.new_page()
@@ -71,7 +68,7 @@ class VisaScraper:
                 await page.goto(self.settings.qmq_url, wait_until="networkidle")
 
                 # Wait for JavaScript to load and make API calls
-                await page.wait_for_timeout(3000)
+                await page.wait_for_timeout(5000)
 
                 # Process intercepted API responses
                 api_data = {}
@@ -94,14 +91,11 @@ class VisaScraper:
                     self.appointment_info = appointment_data
                     return appointment_data
 
-                # Fallback: try to extract from page content
-                logger.warning("API interception failed, falling back to page extraction")
-                appointment_data = await self._extract_from_page(page)
-                if appointment_data:
-                    self.appointment_info = appointment_data
-                    return appointment_data
-
-                logger.warning("Could not extract appointment data")
+                # Log fallback and return None instead of doing unreliable page extraction
+                logger.warning(
+                    "API interception failed; no appointment data extracted. "
+                    "Consider retrying or checking if qmq.app structure has changed."
+                )
                 return None
 
             except Exception as e:
@@ -116,7 +110,7 @@ class VisaScraper:
         self, api_data: dict
     ) -> Optional[AppointmentInfo]:
         """Extract appointment info from intercepted Supabase API responses."""
-        for url, data in api_data.items():
+        for data in api_data.values():
             result = self._parse_appointment_data(data)
             if result:
                 return result
@@ -243,47 +237,3 @@ class VisaScraper:
         logger.warning(f"Could not parse date: {date_str}")
         return None
 
-    async def _extract_from_page(self, page: Page) -> Optional[AppointmentInfo]:
-        """Fallback: Extract data directly from page DOM using regex."""
-        try:
-            # Look for date patterns in the page text
-            content = await page.content()
-
-            # Look for Beijing F-1 Other Student section
-            # This is a heuristic approach - adjust based on actual page structure
-            beijing_pattern = re.compile(
-                r"北京.*?F-1.*?Other Student.*?(\d{4}-\d{2}-\d{2})",
-                re.IGNORECASE | re.DOTALL,
-            )
-            match = beijing_pattern.search(content)
-
-            if match:
-                parsed_date = self._parse_date(match.group(1))
-                if parsed_date:
-                    return AppointmentInfo(
-                        city=self.settings.city,
-                        visa_type=self.settings.visa_type,
-                        visa_category=self.settings.visa_category,
-                        available_date=parsed_date,
-                    )
-
-            # Try to find any date on the page
-            date_pattern = re.compile(r"(\d{4}-\d{2}-\d{2})")
-            dates = date_pattern.findall(content)
-            if dates:
-                # Use the earliest date found
-                parsed_dates = [self._parse_date(d) for d in dates]
-                parsed_dates = [d for d in parsed_dates if d]
-                if parsed_dates:
-                    earliest = min(parsed_dates)
-                    return AppointmentInfo(
-                        city=self.settings.city,
-                        visa_type=self.settings.visa_type,
-                        visa_category=self.settings.visa_category,
-                        available_date=earliest,
-                    )
-
-        except Exception as e:
-            logger.debug(f"Failed to extract from page: {e}")
-
-        return None
